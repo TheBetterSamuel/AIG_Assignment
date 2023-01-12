@@ -28,10 +28,12 @@ class Wizard_TeamA(Character):
         seeking_state = WizardStateSeeking_TeamA(self)
         attacking_state = WizardStateAttacking_TeamA(self)
         ko_state = WizardStateKO_TeamA(self)
+        fleeing_state = WizardStateFleeing_TeamA(self)
 
         self.brain.add_state(seeking_state)
         self.brain.add_state(attacking_state)
         self.brain.add_state(ko_state)
+        self.brain.add_state(fleeing_state)
 
         self.brain.set_state("seeking")
 
@@ -46,8 +48,7 @@ class Wizard_TeamA(Character):
         
         level_up_stats = ["hp", "speed", "ranged damage", "ranged cooldown", "projectile range"]
         if self.can_level_up():
-            choice = randint(0, len(level_up_stats) - 1)
-            self.level_up(level_up_stats[choice])      
+            self.level_up(level_up_stats[3])      
 
 
 class WizardStateSeeking_TeamA(State):
@@ -104,6 +105,29 @@ class WizardStateSeeking_TeamA(State):
         else:
             self.wizard.move_target.position = self.wizard.path_graph.nodes[self.wizard.base.target_node_index].position
 
+class WizardStateFleeing_TeamA(State):
+
+    def __init__(self, wizard):
+
+        State.__init__(self, "fleeing")
+        self.wizard = wizard
+
+    def do_actions(self):
+        nearest_node = self.wizard.path_graph.get_nearest_node(self.wizard.position)
+        self.wizard.velocity = self.nearest_node.position - self.wizard.position
+        if self.wizard.velocity.length() > 0:
+            self.wizard.velocity.normalize_ip();
+            self.wizard.velocity *= self.wizard.maxSpeed
+
+    def check_conditions(self):
+        if (self.nearest_node.position - self.wizard.position).length() < 8:
+            return "seeking"
+
+    def entry_actions(self):
+        return None
+
+
+
 
 class WizardStateAttacking_TeamA(State):
 
@@ -118,15 +142,35 @@ class WizardStateAttacking_TeamA(State):
 
         # opponent within range
         if opponent_distance <= self.wizard.min_target_distance:
-            self.wizard.velocity = Vector2(0, 0)
-            if self.wizard.current_ranged_cooldown <= 0:
-                self.wizard.ranged_attack(self.wizard.target.position, self.wizard.explosion_image)
-
+            # if wizard too close
+            if opponent_distance < self.wizard.min_target_distance - 5:
+                self.wizard.velocity = self.wizard.position - self.wizard.target.position
+                # ranged attack
+                if self.wizard.current_ranged_cooldown <= 0:
+                    self.wizard.ranged_attack(self.wizard.target.position, self.wizard.explosion_image)
+                if self.wizard.velocity.length() > 0:
+                    self.wizard.velocity.normalize_ip();
+                    self.wizard.velocity *= self.wizard.maxSpeed
+            else:
+                self.wizard.velocity = Vector2(0, 0)
+                if self.wizard.current_ranged_cooldown <= 0:
+                    self.wizard.ranged_attack(self.wizard.target.position, self.wizard.explosion_image)
         else:
             self.wizard.velocity = self.wizard.target.position - self.wizard.position
             if self.wizard.velocity.length() > 0:
                 self.wizard.velocity.normalize_ip();
                 self.wizard.velocity *= self.wizard.maxSpeed
+
+        # collision detection
+        collision_list = pygame.sprite.spritecollide(self.wizard, self.wizard.world.obstacles, False, pygame.sprite.collide_mask)
+        for entity in collision_list:
+            if entity.team_id == self.wizard.team_id:
+                continue
+            elif entity.name == "obstacle" or entity.name == "base":
+                return "fleeing"
+
+        else:
+            self.wizard.move_target.position = self.wizard.path_graph.nodes[self.wizard.base.target_node_index].position
 
 
     def check_conditions(self):
