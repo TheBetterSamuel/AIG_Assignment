@@ -1,4 +1,4 @@
-# #0e73a9 AI for Games Assignment
+# [#0e73a9] AI for Games Assignment
 
 ## Team Name: Nord
 Student ID | Name | Character |
