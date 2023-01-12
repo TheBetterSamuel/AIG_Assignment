@@ -1,9 +1,7 @@
 # AI for Games Assignment
 
 ## Team Name: Nord
-```diff
-+Student ID | Name | Character |
-```
+Student ID | Name | Character |
 ----------|----------|---------- |
 S10203077 | Chua Xuan Wei | Archer
 S10205540 | Jun Keat | Knight
