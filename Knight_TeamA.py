@@ -14,6 +14,8 @@ class Knight_TeamA(Character):
 
         self.level_up_times = 0
 
+        self.next_node_path = None
+
         self.base = base
         self.position = position
         self.move_target = GameEntity(world, "knight_move_target", None)
@@ -27,10 +29,12 @@ class Knight_TeamA(Character):
         seeking_state = KnightStateSeeking_TeamA(self)
         attacking_state = KnightStateAttacking_TeamA(self)
         ko_state = KnightStateKO_TeamA(self)
+        rushing_state = KnightStateRushing_TeamA(self)
 
         self.brain.add_state(seeking_state)
         self.brain.add_state(attacking_state)
         self.brain.add_state(ko_state)
+        self.brain.add_state(rushing_state)
 
         self.brain.set_state("seeking")
         
@@ -46,14 +50,13 @@ class Knight_TeamA(Character):
 
         level_up_stats = ["hp", "healing cooldown"]
         if self.can_level_up():
-            if self.level_up_times <= 1:
+            if self.level_up_times <= 4:
                 choice = 0
                 self.level_up(level_up_stats[choice])
             else:
                 choice = 1
                 self.level_up(level_up_stats[choice])
             self.level_up_times += 1
-
 
     def get_closest_node(self, position):
 
@@ -108,17 +111,110 @@ class Knight_TeamA(Character):
             
             if (entity.name == "tower") and (entity.team_id != 2 or entity.team_id != self.team_id):
                 distance = (self.position - entity.position).length()
-                if distance < 150:
+                if distance < 160:
                     nearest_tower = entity
                 
             if (entity.name == "base") and (entity.team_id != 2 or entity.team_id != self.team_id):
                 distance = (self.position - entity.position).length()
-                if distance < 150:
+                if distance < 160:
                     return entity
                 
         return nearest_tower
 
-   
+    def get_base(self):
+
+        nearest_tower = None
+        distance = 0.
+
+        for entity in self.world.entities.values():
+
+            # neutral entity
+            if entity.team_id == 2:
+                continue
+
+            # same team
+            if entity.team_id == self.team_id:
+                continue
+                
+            if (entity.name == "base") and (entity.team_id != 2 or entity.team_id != self.team_id):
+                return entity
+                
+        return nearest_tower
+
+class KnightStateRushing_TeamA(State):
+
+    def __init__(self, knight):
+
+        State.__init__(self, "rushing")
+        self.knight = knight
+
+    def do_actions(self):
+
+        self.knight.velocity = self.knight.move_target.position - self.knight.position
+        if self.knight.velocity.length() > 0:
+            self.knight.velocity.normalize_ip()
+            self.knight.velocity *= self.knight.maxSpeed
+
+
+    def check_conditions(self):
+
+        #if hp is below 30%, heal
+        if self.knight.current_hp/self.knight.max_hp < 0.3 :
+            self.knight.heal()
+
+        #set enemy base as target
+        opponent = self.knight.get_base()
+        if opponent is not None:
+            opponent_distance = (self.knight.position - opponent.position).length()
+            if opponent_distance <= self.knight.min_target_distance:
+                    self.knight.target = opponent
+                    return "attacking"
+
+        if (self.knight.position - self.knight.move_target.position).length() < 8:
+
+            #continue on path
+            if self.current_connection < self.path_length:
+                self.knight.move_target.position = self.path[self.current_connection].toNode.position
+                self.current_connection += 1
+            
+        return None
+
+    def entry_actions(self):
+
+        #find the path where the tower is destroyed
+        if self.knight.next_node_path is not None:
+            if self.knight.next_node_path.id == 3:
+                targetNode_id = 7
+            elif self.knight.next_node_path.id == 7:
+                targetNode_id = 3
+            elif self.knight.next_node_path.id == 1:
+                targetNode_id = 5
+            elif self.knight.next_node_path.id == 5:
+                targetNode_id = 1
+            else:
+                targetNode_id = 11
+                    
+            for i in range(0,4):
+                for node in self.knight.world.paths[i].nodes.values():
+                    if node.id == targetNode_id:
+                        self.knight.path_graph = self.knight.world.paths[i]
+
+        nearest_node = self.knight.path_graph.get_nearest_node(self.knight.position)
+
+        self.path = pathFindAStar(self.knight.path_graph, \
+                                  nearest_node, \
+                                  self.knight.path_graph.nodes[self.knight.base.target_node_index])
+
+        
+        self.path_length = len(self.path)
+
+        if (self.path_length > 0):
+            self.current_connection = 0
+            self.knight.move_target.position = self.path[0].fromNode.position
+
+        else:
+            self.knight.move_target.position = self.knight.path_graph.nodes[self.knight.base.target_node_index].position
+  
 
 
 class KnightStateSeeking_TeamA(State):
@@ -138,12 +234,12 @@ class KnightStateSeeking_TeamA(State):
             self.knight.velocity.normalize_ip()
             self.knight.velocity *= self.knight.maxSpeed
 
-        #if hp is below 50, heal
-        if self.knight.current_hp <= 50:
-            self.knight.heal()
-
 
     def check_conditions(self):
+
+        #if hp is below 30%, heal
+        if self.knight.current_hp/self.knight.max_hp < 0.3 :
+            self.knight.heal()
 
         tower_list = self.knight.get_remaining_towers()
         remaining_towers = len(tower_list)
@@ -151,33 +247,29 @@ class KnightStateSeeking_TeamA(State):
             final_tower = tower_list[0]
             self.knight.next_node_path = self.knight.get_closest_node(final_tower.position)
             
-
+        #if colliding with obstacle, return to path
         collision_list = pygame.sprite.spritecollide(self.knight, self.knight.world.obstacles, False, pygame.sprite.collide_mask)
         for entity in collision_list:
             if entity.team_id == self.knight.team_id:
                 continue
-            elif entity.name == "obstacle" or entity.name == "base":
-                continue
+            elif entity.name == "obstacle":
+                nearest_node = self.knight.path_graph.get_nearest_node(self.knight.position)
+                self.knight.velocity = nearest_node.position - self.knight.position
+                if self.knight.velocity.length() > 0:
+                    self.knight.velocity.normalize_ip();
+                    self.knight.velocity *= self.knight.maxSpeed
+                    #self.knight.velocity = self.knight.base.spawn_position - self.knight.position
+
                 
-        #use this section here to code different actions when encountering different entities
-        #nearest_opponent.name to get type of entity
-        # check if opponent is in range
         nearest_opponent = self.knight.world.get_nearest_opponent(self.knight)
-        #nearest_tower = self.knight.get_nearest_tower()
-        nearest_tower = None
 
         if nearest_opponent is not None:
-            if nearest_tower is not None:
-                nearest_opponent = nearest_tower
-                opponent_distance = (self.knight.position - nearest_opponent.position).length()
-                if opponent_distance <= self.knight.min_target_distance:
-                        self.knight.target = nearest_opponent
-                        return "attacking"
-            else:
-                opponent_distance = (self.knight.position - nearest_opponent.position).length()
-                if opponent_distance <= self.knight.min_target_distance:
-                        self.knight.target = nearest_opponent
-                        return "attacking"
+            opponent_distance = (self.knight.position - nearest_opponent.position).length()
+            if opponent_distance <= self.knight.min_target_distance:
+                    self.knight.target = nearest_opponent
+                    return "attacking"
+
+        
         
         if (self.knight.position - self.knight.move_target.position).length() < 8:
 
@@ -190,8 +282,20 @@ class KnightStateSeeking_TeamA(State):
 
 
     def entry_actions(self):
-        nearest_node = self.knight.path_graph.get_nearest_node(self.knight.position)
 
+        #goes to next node instead of moving back
+        nearest_node = self.knight.path_graph.get_nearest_node(self.knight.position)
+        path_node_list = list(self.knight.world.paths[1].nodes.values())
+        count = 0
+        for node in path_node_list:
+            if nearest_node.id == 0:
+               break
+            if node.id == nearest_node.id and count < len(path_node_list)-1:
+                count += 1
+                nearest_node = path_node_list[count]
+                break
+            count += 1
+            
         self.path = pathFindAStar(self.knight.path_graph, \
                                   nearest_node, \
                                   self.knight.path_graph.nodes[self.knight.base.target_node_index])
@@ -220,6 +324,7 @@ class KnightStateAttacking_TeamA(State):
         if pygame.sprite.collide_rect(self.knight, self.knight.target):
             self.knight.velocity = Vector2(0, 0)
             self.knight.melee_attack(self.knight.target)
+            self.knight.colliding_target = True
 
         else:
             self.knight.velocity = self.knight.target.position - self.knight.position
@@ -227,30 +332,46 @@ class KnightStateAttacking_TeamA(State):
                 self.knight.velocity.normalize_ip();
                 self.knight.velocity *= self.knight.maxSpeed
 
-        #if hp is below 50, heal
-        if self.knight.current_hp <= 50:
-            self.knight.heal()
-            
-
-
     def check_conditions(self):
+
+        next_nearest = self.knight.world.get_nearest_opponent(self.knight)
+        if next_nearest.name != "base" and next_nearest.name != "tower":
+            if self.knight.target.name != next_nearest.name:
+                self.knight.target = next_nearest
+
+        #if hp is below 30%, heal
+        if self.knight.current_hp/self.knight.max_hp < 0.3 :
+            self.knight.heal()
+
+        #get location of final tower
         tower_list = self.knight.get_remaining_towers()
         remaining_towers = len(tower_list)
         if remaining_towers == 1:
             final_tower = tower_list[0]
-            self.knight.next_node_path = self.knight.get_closest_node(final_tower.position)
+            
+        #moves outside of final tower range while attacking base
+        if self.knight.target.name == "base":
+            if self.knight.colliding_target == True:
+                if remaining_towers == 1:
+                    if (self.knight.position - final_tower.position).length() < final_tower.min_target_distance:
+                        self.knight.velocity = self.knight.position - final_tower.position
 
+        
+        #if colliding with obstacle, return to path
         collision_list = pygame.sprite.spritecollide(self.knight, self.knight.world.obstacles, False, pygame.sprite.collide_mask)
         for entity in collision_list:
             if entity.team_id == self.knight.team_id:
                 continue
-            elif entity.name == "obstacle" or entity.name == "base":
-                self.knight.velocity = self.knight.base.spawn_position - self.knight.position
+            elif entity.name == "obstacle":
+                nearest_node = self.knight.path_graph.get_nearest_node(self.knight.position)
+                self.knight.velocity = nearest_node.position - self.knight.position
                 if self.knight.velocity.length() > 0:
                     self.knight.velocity.normalize_ip();
                     self.knight.velocity *= self.knight.maxSpeed
+                return "seeking"
+                    #self.knight.velocity = self.knight.base.spawn_position - self.knight.position
 
-        
+        #if detect tower nearby, target tower instead
         nearest_tower = self.knight.get_nearest_tower()
 
         if nearest_tower is not None:
@@ -267,6 +388,8 @@ class KnightStateAttacking_TeamA(State):
         return None
 
     def entry_actions(self):
+
+        self.knight.colliding_target = False
 
         return None
 
@@ -298,19 +421,7 @@ class KnightStateKO_TeamA(State):
             self.knight.ko = False
 
             if self.knight.next_node_path is not None:
-                if self.knight.next_node_path.id == 3:
-                    targetNode_id = 7
-                elif self.knight.next_node_path.id == 7:
-                    targetNode_id = 3
-                elif self.knight.next_node_path.id == 1:
-                    targetNode_id = 5
-                elif self.knight.next_node_path.id == 5:
-                    targetNode_id = 1
-                    
-                for i in range(0,4):
-                    for node in self.knight.world.paths[i].nodes.values():
-                        if node.id == targetNode_id:
-                            self.knight.path_graph = self.knight.world.paths[i]
+                return "rushing"
             else:
                 self.knight.path_graph = self.knight.world.paths[3]
             return "seeking"
