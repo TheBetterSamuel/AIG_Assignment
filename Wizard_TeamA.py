@@ -118,6 +118,9 @@ class WizardStateFleeing_TeamA(State):
         if self.wizard.velocity.length() > 0:
             self.wizard.velocity.normalize_ip();
             self.wizard.velocity *= self.wizard.maxSpeed
+        if opponent_distance <= self.wizard.min_target_distance:
+            if self.wizard.current_ranged_cooldown <= 0:
+                self.wizard.ranged_attack(self.wizard.target.position, self.wizard.explosion_image)
 
     def check_conditions(self):
         if (self.nearest_node.position - self.wizard.position).length() < 8:
