@@ -103,6 +103,17 @@ class ArcherStateSeeking_TeamA(State):
 
         nearest_node = self.archer.path_graph.get_nearest_node(self.archer.position)
 
+        path_node_list = list(self.archer.world.paths[1].nodes.values())
+        count = 0
+        for node in path_node_list:
+            if nearest_node.id == 0:
+               break
+            if node.id == nearest_node.id and count < len(path_node_list)-1:
+                count += 1
+                nearest_node = path_node_list[count]
+                break
+            count += 1
+
         self.path = pathFindAStar(self.archer.path_graph, \
                                   nearest_node, \
                                   self.archer.path_graph.nodes[self.archer.base.target_node_index])
