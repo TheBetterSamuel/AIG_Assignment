@@ -48,7 +48,7 @@ class Archer_TeamA(Character):
         
         Character.process(self, time_passed)
         
-        level_up_stats = ["projectile range" "ranged cooldown"]
+        level_up_stats = ["ranged cooldown"]
         if self.can_level_up():
             choice = randint(0, len(level_up_stats) - 1)
             self.level_up(level_up_stats[choice])   
@@ -61,7 +61,7 @@ class ArcherStateSeeking_TeamA(State):
         State.__init__(self, "seeking")
         self.archer = archer
 
-        self.archer.path_graph = self.archer.world.paths[randint(0, len(self.archer.world.paths)-1)]
+        self.archer.path_graph = self.archer.world.paths[0]
 
 
     def do_actions(self):
