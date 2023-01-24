@@ -91,12 +91,11 @@ class ArcherStateSeeking_TeamA(State):
             if self.current_connection < self.path_length:
                 if self.current_connection >=1:
                     self.archer.prev_node.position = self.path[self.current_connection].fromNode.position # Remembers the previous node's position
-                    print("Previous Node: ")
-                    print(self.archer.prev_node.position)
+                    
 
                 self.archer.move_target.position = self.path[self.current_connection].toNode.position
                 self.current_connection += 1
-                print("added connection")
+                
             
         return None
 
@@ -148,7 +147,7 @@ class ArcherStateAttacking_TeamA(State):
             self.archer.target = nearest_opponent
 
             if (self.archer.position - nearest_opponent.position).length() > self.archer.min_target_distance:
-                print("returned seeking 2")
+                
                 return "seeking"
                 
         
@@ -175,12 +174,10 @@ class ArcherStateAttacking_TeamA(State):
             elif entity.name == "obstacle" or entity.name == "base":
                 obj = entity
                 current_pos = self.archer.position
-                print("Collided with: "+ entity.name)
                 return "fleeing"
 
         if self.archer.position[0] <= 10 or self.archer.position[0] >= (SCREEN_WIDTH - 10) or \
            self.archer.position[1] <= 10 or self.archer.position[1] >= (SCREEN_HEIGHT - 10):
-            print("Collided with: Wall")
             return "fleeing"
 
         return None
@@ -267,7 +264,6 @@ class ArcherStateFocus_TeamA(State):
     def do_actions(self):
 
         opponent_distance = (self.archer.position - self.archer.target.position).length()
-        print("FOCUSING TARGET, TARGET LOCKED: " + self.archer.target.name)
 
         # opponent within range
         if opponent_distance <= self.archer.min_target_distance:
@@ -314,7 +310,7 @@ class ArcherStateKO_TeamA(State):
         if self.archer.current_respawn_time <= 0:
             self.archer.current_respawn_time = self.archer.respawn_time
             self.archer.ko = False
-            self.archer.path_graph = self.archer.world.paths[randint(0, len(self.archer.world.paths)-1)]
+            self.archer.path_graph = self.archer.world.paths[0]
             return "seeking"
             
         return None

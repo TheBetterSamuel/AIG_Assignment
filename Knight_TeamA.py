@@ -224,7 +224,7 @@ class KnightStateSeeking_TeamA(State):
         State.__init__(self, "seeking")
         self.knight = knight
 
-        self.knight.path_graph = self.knight.world.paths[3]
+        self.knight.path_graph = self.knight.world.paths[0]
 
 
     def do_actions(self):
@@ -423,7 +423,7 @@ class KnightStateKO_TeamA(State):
             if self.knight.next_node_path is not None:
                 return "rushing"
             else:
-                self.knight.path_graph = self.knight.world.paths[3]
+                self.knight.path_graph = self.knight.world.paths[0]
             return "seeking"
             
         return None
