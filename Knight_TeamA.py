@@ -158,8 +158,8 @@ class KnightStateRushing_TeamA(State):
 
     def check_conditions(self):
 
-        #if hp is below 30%, heal
-        if self.knight.current_hp/self.knight.max_hp < 0.3 :
+        #if hp is below 100%, heal
+        if self.knight.current_hp/self.knight.max_hp < 1 :
             self.knight.heal()
 
         #set enemy base as target
@@ -237,8 +237,8 @@ class KnightStateSeeking_TeamA(State):
 
     def check_conditions(self):
 
-        #if hp is below 30%, heal
-        if self.knight.current_hp/self.knight.max_hp < 0.3 :
+        #if hp is below 100%, heal
+        if self.knight.current_hp/self.knight.max_hp < 1 :
             self.knight.heal()
 
         tower_list = self.knight.get_remaining_towers()
