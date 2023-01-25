@@ -63,7 +63,7 @@ class Knight_TeamA(Character):
 
         nearest = None
         for node in self.world.graph.nodes.values():
-            if (node.id != 4) and (node.id != 0):
+            if (node.id != 9) and (node.id != 0):
                 if nearest is None:
                     nearest = node
                     nearest_distance = (position - Vector2(nearest.position)).length()
@@ -184,12 +184,16 @@ class KnightStateRushing_TeamA(State):
 
         #find the path where the tower is destroyed
         if self.knight.next_node_path is not None:
-            if self.knight.next_node_path.id == 3:
-                targetNode_id =7
-            elif self.knight.next_node_path.id == 7:
-                targetNode_id = 3
+            if self.knight.next_node_path.id == 8:
+                targetNode_id =17
+            elif self.knight.next_node_path.id == 17:
+                targetNode_id = 8
+            if self.knight.next_node_path.id == 1:
+                targetNode_id =10
+            elif self.knight.next_node_path.id == 10:
+                targetNode_id = 1
             else:
-                targetNode_id = 4
+                targetNode_id = 9
                     
             for i in range(0,4):
                 for node in self.knight.world.paths[i].nodes.values():
@@ -280,7 +284,7 @@ class KnightStateSeeking_TeamA(State):
 
     def entry_actions(self):
 
-        #self.knight.target = None
+        self.knight.target = None
 
         #goes to next node instead of moving back
         nearest_node = self.knight.path_graph.get_nearest_node(self.knight.position)
