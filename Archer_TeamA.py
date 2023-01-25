@@ -19,9 +19,10 @@ class Archer_TeamA(Character):
         self.move_target = GameEntity(world, "archer_move_target", None)
         self.prev_node = GameEntity(world, "archer_prev_node", None)
         self.target = None
+        self.world.generate_pathfinding_graphs("test_pathfinding.txt")
 
         self.maxSpeed = 50
-        self.min_target_distance = 100
+        self.min_target_distance = 170
         self.projectile_range = 100
         self.projectile_speed = 100
 

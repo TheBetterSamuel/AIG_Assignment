@@ -20,6 +20,8 @@ class Knight_TeamA(Character):
         self.position = position
         self.move_target = GameEntity(world, "knight_move_target", None)
         self.target = None
+        self.world.generate_pathfinding_graphs("test_pathfinding.txt")
+
 
         self.maxSpeed = 80
         self.min_target_distance = 100

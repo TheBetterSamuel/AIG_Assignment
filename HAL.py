@@ -35,7 +35,7 @@ class World(object):
         self.background = pygame.image.load("assets\grass_bkgrd_1024_768.png").convert_alpha()
 
         self.graph = Graph(self)
-        self.generate_pathfinding_graphs("test_pathfinding.txt")
+        self.generate_pathfinding_graphs("pathfinding_graph.txt")
         self.scores = [0, 0]
 
         self.countdown_timer = TIME_LIMIT

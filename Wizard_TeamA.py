@@ -19,6 +19,8 @@ class Wizard_TeamA(Character):
         self.position = position
         self.move_target = GameEntity(world, "wizard_move_target", None)
         self.target = None
+        self.world.generate_pathfinding_graphs("test_pathfinding.txt")
+
 
         self.maxSpeed = 50
         self.min_target_distance = 100
