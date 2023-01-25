@@ -20,6 +20,7 @@ class Knight_TeamA(Character):
         self.position = position
         self.move_target = GameEntity(world, "knight_move_target", None)
         self.target = None
+        self.world.generate_pathfinding_graphs("test_pathfinding.txt")
 
         self.maxSpeed = 80
         self.min_target_distance = 100
@@ -183,16 +184,12 @@ class KnightStateRushing_TeamA(State):
 
         #find the path where the tower is destroyed
         if self.knight.next_node_path is not None:
-            if self.knight.next_node_path.id == 8:
-                targetNode_id =17
-            elif self.knight.next_node_path.id == 17:
-                targetNode_id = 8
-            elif self.knight.next_node_path.id == 1:
-                targetNode_id = 10
-            elif self.knight.next_node_path.id == 10:
-                targetNode_id = 1
+            if self.knight.next_node_path.id == 3:
+                targetNode_id =7
+            elif self.knight.next_node_path.id == 7:
+                targetNode_id = 3
             else:
-                targetNode_id = 9
+                targetNode_id = 4
                     
             for i in range(0,4):
                 for node in self.knight.world.paths[i].nodes.values():
@@ -283,7 +280,7 @@ class KnightStateSeeking_TeamA(State):
 
     def entry_actions(self):
 
-        self.knight.target = None
+        #self.knight.target = None
 
         #goes to next node instead of moving back
         nearest_node = self.knight.path_graph.get_nearest_node(self.knight.position)
