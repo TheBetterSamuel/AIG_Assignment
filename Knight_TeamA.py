@@ -181,20 +181,18 @@ class KnightStateRushing_TeamA(State):
         return None
 
     def entry_actions(self):
-
         #find the path where the tower is destroyed
         if self.knight.next_node_path is not None:
             if self.knight.next_node_path.id == 8:
-                targetNode_id =17
-            elif self.knight.next_node_path.id == 17:
+                targetNode_id = 17
+            if self.knight.next_node_path.id == 17:
                 targetNode_id = 8
             if self.knight.next_node_path.id == 1:
-                targetNode_id =10
-            elif self.knight.next_node_path.id == 10:
+                targetNode_id = 10
+            if self.knight.next_node_path.id == 10:
                 targetNode_id = 1
             else:
-                targetNode_id = 9
-                    
+                targetNode_id = 23
             for i in range(0,4):
                 for node in self.knight.world.paths[i].nodes.values():
                     if node.id == targetNode_id:
@@ -416,7 +414,6 @@ class KnightStateKO_TeamA(State):
         if remaining_towers == 1:
             final_tower = tower_list[0]
             self.knight.next_node_path = self.knight.get_closest_node(final_tower.position)
-
         # respawned
         if self.knight.current_respawn_time <= 0:
 
@@ -427,7 +424,7 @@ class KnightStateKO_TeamA(State):
                 return "rushing"
             else:
                 self.knight.path_graph = self.knight.world.paths[0]
-            return "seeking"
+                return "seeking"
             
         return None
 
