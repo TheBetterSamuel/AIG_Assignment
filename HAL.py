@@ -35,7 +35,7 @@ class World(object):
         self.background = pygame.image.load("assets\grass_bkgrd_1024_768.png").convert_alpha()
 
         self.graph = Graph(self)
-        self.generate_pathfinding_graphs("pathfinding_graph.txt")
+        self.generate_pathfinding_graphs("test_pathfinding.txt")
         self.scores = [0, 0]
 
         self.countdown_timer = TIME_LIMIT
@@ -279,7 +279,7 @@ def run():
 
 
     # --- Initialize Blue buildings and units ---
-    blue_base = Base(world, blue_base_image, blue_orc_image, blue_rock_image, 0, 4)
+    blue_base = Base(world, blue_base_image, blue_orc_image, blue_rock_image, 0, 9)
     blue_base.position = Vector2(68, 68)
     blue_base.team_id = 0
     blue_base.max_hp = BASE_MAX_HP
@@ -354,7 +354,7 @@ def run():
 
 
     # --- Initialize Red buildings and units ---
-    red_base = Base(world, red_base_image, red_orc_image, red_rock_image, 4, 0)
+    red_base = Base(world, red_base_image, red_orc_image, red_rock_image, 9, 0)
     red_base.position = Vector2(SCREEN_WIDTH - 68, SCREEN_HEIGHT - 68)
     red_base.team_id = 1
     red_base.max_hp = BASE_MAX_HP * RED_MULTIPLIER
