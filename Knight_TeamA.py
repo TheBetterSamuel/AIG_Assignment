@@ -20,8 +20,6 @@ class Knight_TeamA(Character):
         self.position = position
         self.move_target = GameEntity(world, "knight_move_target", None)
         self.target = None
-        self.world.generate_pathfinding_graphs("test_pathfinding.txt")
-
 
         self.maxSpeed = 80
         self.min_target_distance = 100
@@ -50,9 +48,9 @@ class Knight_TeamA(Character):
         
         Character.process(self, time_passed)
 
-        level_up_stats = ["hp", "healing cooldown"]
+        level_up_stats = ["hp", "melee damage"]
         if self.can_level_up():
-            if self.level_up_times <= 4:
+            if self.level_up_times <= 2:
                 choice = 0
                 self.level_up(level_up_stats[choice])
             else:
@@ -118,7 +116,7 @@ class Knight_TeamA(Character):
                 
             if (entity.name == "base") and (entity.team_id != 2 or entity.team_id != self.team_id):
                 distance = (self.position - entity.position).length()
-                if distance < 160:
+                if distance < 130:
                     return entity
                 
         return nearest_tower
@@ -284,6 +282,8 @@ class KnightStateSeeking_TeamA(State):
 
 
     def entry_actions(self):
+
+        self.knight.target = None
 
         #goes to next node instead of moving back
         nearest_node = self.knight.path_graph.get_nearest_node(self.knight.position)
