@@ -6,11 +6,15 @@ from Graph import *
 from Character import *
 from State import *
 
-class Knight_TeamA(Character):
+class Knight_Nord(Character):
 
     def __init__(self, world, image, base, position):
 
         Character.__init__(self, world, "knight", image)
+
+        self.decided_path = 0
+
+        self.previous_node = None
 
         self.level_up_times = 0
 
@@ -20,17 +24,16 @@ class Knight_TeamA(Character):
         self.position = position
         self.move_target = GameEntity(world, "knight_move_target", None)
         self.target = None
-        self.world.generate_pathfinding_graphs("test_pathfinding.txt")
 
         self.maxSpeed = 80
         self.min_target_distance = 100
         self.melee_damage = 20
         self.melee_cooldown = 2.
 
-        seeking_state = KnightStateSeeking_TeamA(self)
-        attacking_state = KnightStateAttacking_TeamA(self)
-        ko_state = KnightStateKO_TeamA(self)
-        rushing_state = KnightStateRushing_TeamA(self)
+        seeking_state = KnightStateSeeking_Nord(self)
+        attacking_state = KnightStateAttacking_Nord(self)
+        ko_state = KnightStateKO_Nord(self)
+        rushing_state = KnightStateRushing_Nord(self)
 
         self.brain.add_state(seeking_state)
         self.brain.add_state(attacking_state)
@@ -63,7 +66,7 @@ class Knight_TeamA(Character):
 
         nearest = None
         for node in self.world.graph.nodes.values():
-            if (node.id != 9) and (node.id != 0):
+            if (node.id != 4) and (node.id != 0):
                 if nearest is None:
                     nearest = node
                     nearest_distance = (position - Vector2(nearest.position)).length()
@@ -142,7 +145,7 @@ class Knight_TeamA(Character):
                 
         return nearest_tower
 
-class KnightStateRushing_TeamA(State):
+class KnightStateRushing_Nord(State):
 
     def __init__(self, knight):
 
@@ -181,18 +184,8 @@ class KnightStateRushing_TeamA(State):
         return None
 
     def entry_actions(self):
-        #find the path where the tower is destroyed
         if self.knight.next_node_path is not None:
-            if self.knight.next_node_path.id == 8:
-                targetNode_id = 17
-            if self.knight.next_node_path.id == 17:
-                targetNode_id = 8
-            if self.knight.next_node_path.id == 1:
-                targetNode_id = 10
-            if self.knight.next_node_path.id == 10:
-                targetNode_id = 1
-            else:
-                targetNode_id = 23
+            targetNode_id = 11
             for i in range(0,4):
                 for node in self.knight.world.paths[i].nodes.values():
                     if node.id == targetNode_id:
@@ -216,14 +209,14 @@ class KnightStateRushing_TeamA(State):
   
 
 
-class KnightStateSeeking_TeamA(State):
+class KnightStateSeeking_Nord(State):
 
     def __init__(self, knight):
 
         State.__init__(self, "seeking")
         self.knight = knight
 
-        self.knight.path_graph = self.knight.world.paths[0]
+        self.knight.path_graph = self.knight.world.paths[self.knight.decided_path]
 
 
     def do_actions(self):
@@ -285,8 +278,9 @@ class KnightStateSeeking_TeamA(State):
         self.knight.target = None
 
         #goes to next node instead of moving back
+
         nearest_node = self.knight.path_graph.get_nearest_node(self.knight.position)
-        path_node_list = list(self.knight.world.paths[1].nodes.values())
+        path_node_list = list(self.knight.world.paths[self.knight.decided_path].nodes.values())
         count = 0
         for node in path_node_list:
             if nearest_node.id == 0:
@@ -301,18 +295,20 @@ class KnightStateSeeking_TeamA(State):
                                   nearest_node, \
                                   self.knight.path_graph.nodes[self.knight.base.target_node_index])
 
+
         
-        self.path_length = len(self.path)
+        if self.path is not None:
+            self.path_length = len(self.path)
 
-        if (self.path_length > 0):
-            self.current_connection = 0
-            self.knight.move_target.position = self.path[0].fromNode.position
+            if (self.path_length > 0):
+                self.current_connection = 0
+                self.knight.move_target.position = self.path[0].fromNode.position
 
-        else:
-            self.knight.move_target.position = self.knight.path_graph.nodes[self.knight.base.target_node_index].position
+            else:
+                self.knight.move_target.position = self.knight.path_graph.nodes[self.knight.base.target_node_index].position
 
 
-class KnightStateAttacking_TeamA(State):
+class KnightStateAttacking_Nord(State):
 
     def __init__(self, knight):
 
@@ -335,14 +331,9 @@ class KnightStateAttacking_TeamA(State):
 
     def check_conditions(self):
 
-        next_nearest = self.knight.world.get_nearest_opponent(self.knight)
-        if next_nearest.name != "base" and next_nearest.name != "tower":
-            if self.knight.target.name != next_nearest.name:
-                self.knight.target = next_nearest
-
         #if hp is below 30%, heal
-        if self.knight.current_hp/self.knight.max_hp < 0.3 :
-            self.knight.heal()
+        #if self.knight.current_hp/self.knight.max_hp < 0.3 :
+            #self.knight.heal()
 
         #get location of final tower
         tower_list = self.knight.get_remaining_towers()
@@ -395,7 +386,7 @@ class KnightStateAttacking_TeamA(State):
         return None
 
 
-class KnightStateKO_TeamA(State):
+class KnightStateKO_Nord(State):
 
     def __init__(self, knight):
 
@@ -423,7 +414,7 @@ class KnightStateKO_TeamA(State):
             if self.knight.next_node_path is not None:
                 return "rushing"
             else:
-                self.knight.path_graph = self.knight.world.paths[0]
+                self.knight.path_graph = self.knight.world.paths[self.knight.decided_path]
                 return "seeking"
             
         return None

@@ -6,11 +6,13 @@ from Graph import *
 from Character import *
 from State import *
 
-class Archer_TeamA(Character):
+class Archer_Nord(Character):
 
     def __init__(self, world, image, projectile_image, base, position):
 
         Character.__init__(self, world, "archer", image)
+
+        self.decided_path = 0
 
         self.projectile_image = projectile_image
 
@@ -19,18 +21,17 @@ class Archer_TeamA(Character):
         self.move_target = GameEntity(world, "archer_move_target", None)
         self.prev_node = GameEntity(world, "archer_prev_node", None)
         self.target = None
-        self.world.generate_pathfinding_graphs("test_pathfinding.txt")
 
         self.maxSpeed = 50
         self.min_target_distance = 170
         self.projectile_range = 100
         self.projectile_speed = 100
 
-        seeking_state = ArcherStateSeeking_TeamA(self)
-        attacking_state = ArcherStateAttacking_TeamA(self)
-        ko_state = ArcherStateKO_TeamA(self)
-        fleeing_state = ArcherStateFleeing_TeamA(self)
-        hyperfocus_state = ArcherStateFocus_TeamA(self)
+        seeking_state = ArcherStateSeeking_Nord(self)
+        attacking_state = ArcherStateAttacking_Nord(self)
+        ko_state = ArcherStateKO_Nord(self)
+        fleeing_state = ArcherStateFleeing_Nord(self)
+        hyperfocus_state = ArcherStateFocus_Nord(self)
 
         self.brain.add_state(seeking_state)
         self.brain.add_state(attacking_state)
@@ -55,14 +56,14 @@ class Archer_TeamA(Character):
             self.level_up(level_up_stats[choice])   
 
 
-class ArcherStateSeeking_TeamA(State):
+class ArcherStateSeeking_Nord(State):
 
     def __init__(self, archer):
 
         State.__init__(self, "seeking")
         self.archer = archer
 
-        self.archer.path_graph = self.archer.world.paths[0]
+        self.archer.path_graph = self.archer.world.paths[self.archer.decided_path]
 
 
     def do_actions(self):
@@ -101,19 +102,7 @@ class ArcherStateSeeking_TeamA(State):
         return None
 
     def entry_actions(self):
-
         nearest_node = self.archer.path_graph.get_nearest_node(self.archer.position)
-
-        path_node_list = list(self.archer.world.paths[1].nodes.values())
-        count = 0
-        for node in path_node_list:
-            if nearest_node.id == 0:
-               break
-            if node.id == nearest_node.id and count < len(path_node_list)-1:
-                count += 1
-                nearest_node = path_node_list[count]
-                break
-            count += 1
 
         self.path = pathFindAStar(self.archer.path_graph, \
                                   nearest_node, \
@@ -130,7 +119,7 @@ class ArcherStateSeeking_TeamA(State):
             self.archer.move_target.position = self.archer.path_graph.nodes[self.archer.base.target_node_index].position
 
 
-class ArcherStateAttacking_TeamA(State):
+class ArcherStateAttacking_Nord(State):
 
     def __init__(self, archer):
 
@@ -199,7 +188,7 @@ class ArcherStateAttacking_TeamA(State):
         return None
         
 
-class ArcherStateFleeing_TeamA(State):
+class ArcherStateFleeing_Nord(State):
 
     def __init__(self, archer):
 
@@ -266,7 +255,7 @@ class ArcherStateFleeing_TeamA(State):
         # else:
         #     self.archer.move_target.position = self.archer.path_graph.nodes[self.archer.base.target_node_index].position
 
-class ArcherStateFocus_TeamA(State):
+class ArcherStateFocus_Nord(State):
 
     def __init__(self, archer):
 
@@ -304,7 +293,7 @@ class ArcherStateFocus_TeamA(State):
         return None
 
 
-class ArcherStateKO_TeamA(State):
+class ArcherStateKO_Nord(State):
 
     def __init__(self, archer):
 
@@ -322,7 +311,7 @@ class ArcherStateKO_TeamA(State):
         if self.archer.current_respawn_time <= 0:
             self.archer.current_respawn_time = self.archer.respawn_time
             self.archer.ko = False
-            self.archer.path_graph = self.archer.world.paths[0]
+            self.archer.path_graph = self.archer.world.paths[self.archer.decided_path]
             return "seeking"
             
         return None

@@ -6,11 +6,13 @@ from Graph import *
 from Character import *
 from State import *
 
-class Wizard_TeamA(Character):
+class Wizard_Nord(Character):
 
     def __init__(self, world, image, projectile_image, base, position, explosion_image = None):
 
         Character.__init__(self, world, "wizard", image)
+
+        self.decided_path = 0
 
         self.projectile_image = projectile_image
         self.explosion_image = explosion_image
@@ -19,7 +21,6 @@ class Wizard_TeamA(Character):
         self.position = position
         self.move_target = GameEntity(world, "wizard_move_target", None)
         self.target = None
-        self.world.generate_pathfinding_graphs("test_pathfinding.txt")
 
 
         self.maxSpeed = 50
@@ -27,10 +28,10 @@ class Wizard_TeamA(Character):
         self.projectile_range = 100
         self.projectile_speed = 100
 
-        seeking_state = WizardStateSeeking_TeamA(self)
-        attacking_state = WizardStateAttacking_TeamA(self)
-        ko_state = WizardStateKO_TeamA(self)
-        fleeing_state = WizardStateFleeing_TeamA(self)
+        seeking_state = WizardStateSeeking_Nord(self)
+        attacking_state = WizardStateAttacking_Nord(self)
+        ko_state = WizardStateKO_Nord(self)
+        fleeing_state = WizardStateFleeing_Nord(self)
 
         self.brain.add_state(seeking_state)
         self.brain.add_state(attacking_state)
@@ -53,14 +54,14 @@ class Wizard_TeamA(Character):
             self.level_up(level_up_stats[3])      
 
 
-class WizardStateSeeking_TeamA(State):
+class WizardStateSeeking_Nord(State):
 
     def __init__(self, wizard):
 
         State.__init__(self, "seeking")
         self.wizard = wizard
 
-        self.wizard.path_graph = self.wizard.world.paths[0]
+        self.wizard.path_graph = self.wizard.world.paths[self.wizard.decided_path]
         
 
     def do_actions(self):
@@ -107,7 +108,7 @@ class WizardStateSeeking_TeamA(State):
         else:
             self.wizard.move_target.position = self.wizard.path_graph.nodes[self.wizard.base.target_node_index].position
 
-class WizardStateFleeing_TeamA(State):
+class WizardStateFleeing_Nord(State):
 
     def __init__(self, wizard):
 
@@ -134,7 +135,7 @@ class WizardStateFleeing_TeamA(State):
 
 
 
-class WizardStateAttacking_TeamA(State):
+class WizardStateAttacking_Nord(State):
 
     def __init__(self, wizard):
 
@@ -192,7 +193,7 @@ class WizardStateAttacking_TeamA(State):
         return None
 
 
-class WizardStateKO_TeamA(State):
+class WizardStateKO_Nord(State):
 
     def __init__(self, wizard):
 
@@ -210,7 +211,7 @@ class WizardStateKO_TeamA(State):
         if self.wizard.current_respawn_time <= 0:
             self.wizard.current_respawn_time = self.wizard.respawn_time
             self.wizard.ko = False
-            self.wizard.path_graph = self.wizard.world.paths[0]
+            self.wizard.path_graph = self.wizard.world.paths[self.wizard.decided_path]
             return "seeking"
             
         return None
