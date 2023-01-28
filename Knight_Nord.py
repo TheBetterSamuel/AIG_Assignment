@@ -281,15 +281,28 @@ class KnightStateSeeking_Nord(State):
 
         nearest_node = self.knight.path_graph.get_nearest_node(self.knight.position)
         path_node_list = list(self.knight.world.paths[self.knight.decided_path].nodes.values())
-        count = 0
-        for node in path_node_list:
-            if nearest_node.id == 0:
-               break
-            if node.id == nearest_node.id and count < len(path_node_list)-1:
+
+        if self.knight.team_id == 0:
+            count = 0
+            for node in path_node_list:
+                if nearest_node.id == 0 and nearest_node.id == 4:
+                    break
+                if node.id == nearest_node.id and count < len(path_node_list)-1:
+                    count += 1
+                    nearest_node = path_node_list[count]
+                    break
                 count += 1
-                nearest_node = path_node_list[count]
-                break
-            count += 1
+
+        elif self.knight.team_id == 1:
+            count = 4
+            for node in path_node_list:
+                if nearest_node.id == 0 and nearest_node.id == 4:
+                    break
+                if node.id == nearest_node.id and count <= len(path_node_list)-1:
+                    count -= 1
+                    nearest_node = path_node_list[count]
+                    break
+                count -= 1
             
         self.path = pathFindAStar(self.knight.path_graph, \
                                   nearest_node, \
